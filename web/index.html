@@ -3,103 +3,250 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Logo Tracer — PNG to clean SVG</title>
+  <title>Logo Tracer — Turn any PNG into a clean SVG.</title>
+  <meta name="description" content="Convert a PNG logo into a clean, editable SVG — entirely in your browser, powered by WebAssembly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Map the Vercel design system into Tailwind.
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#171717', body: '#4d4d4d', mute: '#888888',
+            hairline: '#ebebeb', 'hairline-strong': '#a1a1a1',
+            canvas: '#ffffff', soft: '#fafafa', soft2: '#f5f5f5',
+            link: '#0070f3',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+          },
+          boxShadow: {
+            // stacked, subtle — never a single heavy drop
+            'lvl1': 'inset 0 0 0 1px #00000014',
+            'lvl2': '0px 1px 1px #00000005, 0px 2px 2px #0000000a, inset 0 0 0 1px #00000014',
+            'lvl3': '0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a, inset 0 0 0 1px #00000014',
+            'lvl4': '0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a, inset 0 0 0 1px #00000014',
+          },
+          borderRadius: { pill: '100px', pillsm: '64px' },
+          letterSpacing: { hero: '-2.4px', sec: '-1.28px', sm2: '-0.28px' },
+        },
+      },
+    };
+  </script>
   <style>
-    /* checkerboard to reveal transparency in previews */
+    html { -webkit-font-smoothing: antialiased; }
+    ::selection { background: #171717; color: #f2f2f2; }
+    /* mesh gradient — the brand's only decoration, hero scale */
+    .mesh {
+      background:
+        radial-gradient(40% 60% at 15% 30%, #007cf0 0%, transparent 60%),
+        radial-gradient(45% 55% at 50% 10%, #00dfd8 0%, transparent 55%),
+        radial-gradient(50% 60% at 80% 25%, #7928ca 0%, transparent 60%),
+        radial-gradient(45% 55% at 70% 70%, #ff0080 0%, transparent 55%),
+        radial-gradient(40% 50% at 25% 75%, #ff4d4d 0%, transparent 55%),
+        radial-gradient(45% 55% at 90% 80%, #f9cb28 0%, transparent 55%);
+      filter: blur(40px);
+    }
     .checker {
       background-image:
-        linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
-        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
-        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+        linear-gradient(45deg, #ebebeb 25%, transparent 25%),
+        linear-gradient(-45deg, #ebebeb 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ebebeb 75%),
+        linear-gradient(-45deg, transparent 75%, #ebebeb 75%);
       background-size: 18px 18px;
       background-position: 0 0, 0 9px, 9px -9px, -9px 0;
     }
-    .drop-active { border-color: #6366f1; background-color: #eef2ff; }
+    .drop-active { border-color: #171717 !important; background: #f5f5f5; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
-  <div class="mx-auto max-w-5xl px-4 py-8">
-    <!-- Header -->
-    <header class="mb-8 text-center">
-      <h1 class="text-3xl font-bold tracking-tight text-slate-900">Logo Tracer</h1>
-      <p class="mt-1 text-slate-500">Convert a PNG logo into a clean, editable SVG — entirely in your browser.</p>
-    </header>
+<body class="bg-soft font-sans text-ink">
 
-    <!-- Upload zone -->
-    <div id="drop" class="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-white p-10 text-center transition hover:border-indigo-400">
-      <input id="file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
-      <svg class="mx-auto h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-      </svg>
-      <p class="mt-3 font-medium text-slate-700">Drop a PNG here, or click to choose</p>
-      <p class="mt-1 text-sm text-slate-400">Works best on logos and icons with a few flat colors</p>
+  <!-- NAV -->
+  <header class="sticky top-0 z-30 border-b border-hairline bg-canvas/80 backdrop-blur">
+    <nav class="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6">
+      <a href="#" class="flex items-center gap-2 font-semibold tracking-sm2">
+        <span class="grid h-6 w-6 place-items-center rounded-[6px] bg-ink text-canvas text-xs font-bold">◢</span>
+        Logo Tracer
+      </a>
+      <div class="hidden items-center gap-1 text-sm text-body md:flex">
+        <a href="#tool" class="rounded-full px-3 py-1 transition hover:bg-soft2 hover:text-ink">Convert</a>
+        <a href="#features" class="rounded-full px-3 py-1 transition hover:bg-soft2 hover:text-ink">Features</a>
+        <a href="#how" class="rounded-full px-3 py-1 transition hover:bg-soft2 hover:text-ink">How it works</a>
+        <a href="https://github.com/dangijaswant/logo-tracer" class="rounded-full px-3 py-1 transition hover:bg-soft2 hover:text-ink">GitHub</a>
+      </div>
+      <a href="#tool" class="rounded-[6px] bg-ink px-3 py-1.5 text-sm font-medium text-canvas tracking-sm2 transition hover:bg-ink/90">Convert a logo</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="relative overflow-hidden">
+    <!-- mesh gradient backdrop, hero scale only -->
+    <div class="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[520px] opacity-90">
+      <div class="mesh absolute inset-0"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-soft/40 to-soft"></div>
     </div>
 
-    <!-- Status -->
-    <p id="status" class="mt-4 hidden text-center text-sm font-medium text-indigo-600"></p>
+    <div class="relative mx-auto max-w-[1400px] px-6 pt-20 pb-10 text-center">
+      <p class="mb-5 inline-block rounded-full border border-hairline bg-canvas/70 px-3 py-1 font-mono text-xs text-body backdrop-blur">
+        wasm · runs in your browser
+      </p>
+      <h1 class="mx-auto max-w-3xl text-[48px] font-semibold leading-[48px] tracking-hero text-ink">
+        Turn any PNG into a clean SVG.
+      </h1>
+      <p class="mx-auto mt-5 max-w-xl text-lg leading-7 text-body">
+        Drop a logo and get a compact, editable vector — straight edges as lines, sharp corners,
+        smooth arc-fitted curves. No upload, no sign-up.
+      </p>
+      <div class="mt-8 flex items-center justify-center gap-3">
+        <a href="#tool" class="rounded-pill bg-ink px-5 py-3 text-base font-medium text-canvas transition hover:bg-ink/90">Convert a logo</a>
+        <a href="https://github.com/dangijaswant/logo-tracer" class="rounded-pill border border-hairline bg-canvas px-5 py-3 text-base font-medium text-ink shadow-lvl1 transition hover:bg-soft2">View source</a>
+      </div>
+    </div>
+  </section>
 
-    <!-- Results -->
-    <section id="results" class="mt-8 hidden">
+  <!-- TOOL -->
+  <section id="tool" class="mx-auto max-w-[1400px] px-6 pb-20">
+    <!-- drop zone -->
+    <div id="drop" class="mx-auto max-w-3xl cursor-pointer rounded-xl border border-dashed border-hairline-strong bg-canvas p-10 text-center shadow-lvl2 transition">
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+      <div class="mx-auto grid h-12 w-12 place-items-center rounded-full bg-soft2 text-ink">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+      </div>
+      <p class="mt-3 font-medium text-ink tracking-sm2">Drop a PNG here, or click to choose</p>
+      <p class="mt-1 font-mono text-xs text-mute">png · jpg · webp — works best on logos with a few flat colors</p>
+    </div>
+
+    <p id="status" class="mt-4 hidden text-center font-mono text-xs font-medium text-ink"></p>
+
+    <!-- results -->
+    <div id="results" class="mt-8 hidden">
       <div class="grid gap-4 md:grid-cols-2">
-        <!-- Original -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Original PNG</h2>
-          <div class="checker flex items-center justify-center rounded-lg p-4">
+        <!-- original -->
+        <div class="rounded-xl border border-hairline bg-canvas p-4 shadow-lvl2">
+          <h2 class="mb-3 font-mono text-xs uppercase tracking-wide text-mute">Original</h2>
+          <div class="checker flex min-h-[18rem] items-center justify-center rounded-lg p-4">
             <img id="srcImg" class="max-h-72 w-auto" alt="source" />
           </div>
         </div>
-        <!-- Traced -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+        <!-- traced -->
+        <div class="rounded-xl border border-hairline bg-canvas p-4 shadow-lvl2">
           <div class="mb-3 flex items-center justify-between">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Traced SVG</h2>
-            <span id="metrics" class="text-xs text-slate-400"></span>
+            <h2 class="font-mono text-xs uppercase tracking-wide text-mute">Traced SVG</h2>
+            <span id="metrics" class="font-mono text-xs text-mute"></span>
           </div>
-          <div class="checker flex items-center justify-center rounded-lg p-4">
+          <div class="checker flex min-h-[18rem] items-center justify-center rounded-lg p-4">
             <div id="svgBox" class="flex max-h-72 items-center justify-center [&>svg]:max-h-72 [&>svg]:w-auto"></div>
           </div>
         </div>
       </div>
 
-      <!-- Controls -->
-      <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <!-- controls -->
+      <div class="mt-4 rounded-xl border border-hairline bg-canvas p-6 shadow-lvl2">
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <label class="block">
-            <span class="text-sm font-medium text-slate-700">Max colors</span>
-            <input id="maxColors" type="range" min="2" max="8" value="4" class="mt-2 w-full accent-indigo-600" />
-            <span class="text-xs text-slate-400"><span id="maxColorsVal">4</span> colors</span>
+            <span class="font-mono text-xs uppercase tracking-wide text-body">Max colors</span>
+            <input id="maxColors" type="range" min="2" max="8" value="4" class="mt-2 w-full accent-ink" />
+            <span class="font-mono text-xs text-mute"><span id="maxColorsVal">4</span> colors</span>
           </label>
           <label class="block">
-            <span class="text-sm font-medium text-slate-700">Color detail</span>
-            <input id="colorPrecision" type="range" min="2" max="8" value="4" class="mt-2 w-full accent-indigo-600" />
-            <span class="text-xs text-slate-400">precision <span id="colorPrecisionVal">4</span></span>
+            <span class="font-mono text-xs uppercase tracking-wide text-body">Color detail</span>
+            <input id="colorPrecision" type="range" min="2" max="8" value="4" class="mt-2 w-full accent-ink" />
+            <span class="font-mono text-xs text-mute">precision <span id="colorPrecisionVal">4</span></span>
           </label>
           <label class="block">
-            <span class="text-sm font-medium text-slate-700">Remove speckle</span>
-            <input id="filterSpeckle" type="range" min="0" max="32" value="16" class="mt-2 w-full accent-indigo-600" />
-            <span class="text-xs text-slate-400">&lt; <span id="filterSpeckleVal">16</span>px dropped</span>
+            <span class="font-mono text-xs uppercase tracking-wide text-body">Remove speckle</span>
+            <input id="filterSpeckle" type="range" min="0" max="32" value="16" class="mt-2 w-full accent-ink" />
+            <span class="font-mono text-xs text-mute">&lt; <span id="filterSpeckleVal">16</span>px</span>
           </label>
           <label class="block">
-            <span class="text-sm font-medium text-slate-700">Corner sharpness</span>
-            <input id="cornerThreshold" type="range" min="20" max="90" value="40" class="mt-2 w-full accent-indigo-600" />
-            <span class="text-xs text-slate-400"><span id="cornerThresholdVal">40</span>°</span>
+            <span class="font-mono text-xs uppercase tracking-wide text-body">Corner sharpness</span>
+            <input id="cornerThreshold" type="range" min="20" max="90" value="40" class="mt-2 w-full accent-ink" />
+            <span class="font-mono text-xs text-mute"><span id="cornerThresholdVal">40</span>°</span>
           </label>
         </div>
-
-        <div class="mt-5 flex flex-wrap items-center gap-3">
-          <button id="retrace" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700">Re-trace</button>
-          <button id="download" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700">Download SVG</button>
-          <button id="copy" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Copy SVG code</button>
-          <button id="reset" class="ml-auto text-sm text-slate-400 hover:text-slate-600">Start over</button>
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <button id="retrace" class="rounded-pill border border-hairline bg-canvas px-4 py-2 text-sm font-medium text-ink shadow-lvl1 transition hover:bg-soft2">Re-trace</button>
+          <button id="download" class="rounded-pill bg-ink px-4 py-2 text-sm font-medium text-canvas transition hover:bg-ink/90">Download SVG</button>
+          <button id="copy" class="rounded-pill border border-hairline bg-canvas px-4 py-2 text-sm font-medium text-ink shadow-lvl1 transition hover:bg-soft2">Copy code</button>
+          <button id="reset" class="ml-auto font-mono text-xs text-mute transition hover:text-ink">start over</button>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <footer class="mt-12 text-center text-xs text-slate-400">
-      Runs fully in your browser via WebAssembly — your image never leaves your device.
-    </footer>
-  </div>
+  <!-- FEATURES -->
+  <section id="features" class="border-t border-hairline bg-canvas">
+    <div class="mx-auto max-w-[1400px] px-6 py-24">
+      <p class="font-mono text-xs uppercase tracking-wide text-mute">Why it's different</p>
+      <h2 class="mt-3 max-w-xl text-[32px] font-semibold leading-10 tracking-sec text-ink">Clean vectors, not pixel soup.</h2>
+      <div class="mt-10 grid gap-4 md:grid-cols-3">
+        <div class="rounded-lg border border-hairline bg-canvas p-6 shadow-lvl3">
+          <div class="font-mono text-xs text-link">01</div>
+          <h3 class="mt-3 text-xl font-semibold tracking-sm2">Runs in your browser</h3>
+          <p class="mt-2 text-base leading-6 text-body">Compiled to WebAssembly. Your image is decoded and traced locally — it never leaves your device.</p>
+        </div>
+        <div class="rounded-lg border border-hairline bg-canvas p-6 shadow-lvl3">
+          <div class="font-mono text-xs text-link">02</div>
+          <h3 class="mt-3 text-xl font-semibold tracking-sm2">Geometry, not guessing</h3>
+          <p class="mt-2 text-base leading-6 text-body">Straight edges become lines, corners stay sharp, and curves are fit from real circular-arc geometry — the way a designer constructs them.</p>
+        </div>
+        <div class="rounded-lg border border-hairline bg-canvas p-6 shadow-lvl3">
+          <div class="font-mono text-xs text-link">03</div>
+          <h3 class="mt-3 text-xl font-semibold tracking-sm2">Tiny, editable output</h3>
+          <p class="mt-2 text-base leading-6 text-body">A small palette and minimal nodes — typical logos come out a few KB and open cleanly in Figma, Illustrator, or Inkscape.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS — polarity-flipped dark band -->
+  <section id="how" class="bg-ink text-canvas">
+    <div class="mx-auto max-w-[1400px] px-6 py-24">
+      <p class="font-mono text-xs uppercase tracking-wide text-white/50">Pipeline</p>
+      <h2 class="mt-3 max-w-xl text-[32px] font-semibold leading-10 tracking-sec">From raster to vector, in milliseconds.</h2>
+      <div class="mt-10 grid gap-6 lg:grid-cols-2">
+        <div class="rounded-lg bg-ink p-6 shadow-[inset_0_0_0_1px_#ffffff1a]">
+          <pre class="overflow-x-auto font-mono text-[13px] leading-5 text-white/80"><span class="text-white/40"># browser decodes the PNG → raw RGBA</span>
+canvas.getImageData(...)
+
+<span class="text-white/40"># wasm runs the logo pipeline</span>
+cluster colors      <span class="text-white/40">→ small palette</span>
+split at corners    <span class="text-white/40">→ sharp edges</span>
+fit lines / arcs    <span class="text-white/40">→ clean curves</span>
+serialize           <span class="text-white/40">→ &lt;svg&gt;</span></pre>
+        </div>
+        <div class="flex flex-col justify-center gap-5">
+          <div class="flex gap-4">
+            <span class="font-mono text-sm text-white/40">1</span>
+            <p class="text-base leading-6 text-white/80">The PNG is decoded to raw pixels by the browser canvas — no image codec ships in the wasm, keeping it ~190&nbsp;KB.</p>
+          </div>
+          <div class="flex gap-4">
+            <span class="font-mono text-sm text-white/40">2</span>
+            <p class="text-base leading-6 text-white/80">Colors collapse to a small dominant palette; contours split at corners so letters and edges stay crisp.</p>
+          </div>
+          <div class="flex gap-4">
+            <span class="font-mono text-sm text-white/40">3</span>
+            <p class="text-base leading-6 text-white/80">Each span becomes a line, a circular arc, or a fitted Bézier — the fewest nodes that match the shape.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-hairline bg-canvas">
+    <div class="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-4 px-6 py-16 text-sm text-body sm:flex-row">
+      <p class="font-mono text-xs text-mute">Runs fully in your browser via WebAssembly. Your image never leaves your device.</p>
+      <div class="flex items-center gap-5">
+        <a href="https://github.com/dangijaswant/logo-tracer" class="transition hover:text-ink">GitHub</a>
+        <a href="#tool" class="transition hover:text-ink">Convert a logo</a>
+      </div>
+    </div>
+  </footer>
 
   <script type="module" src="./app.js"></script>
 </body>

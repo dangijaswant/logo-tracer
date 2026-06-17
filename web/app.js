@@ -31,8 +31,8 @@ let currentName = 'logo';
 function setStatus(msg, isError = false) {
   els.status.textContent = msg;
   els.status.classList.remove('hidden');
-  els.status.classList.toggle('text-rose-600', isError);
-  els.status.classList.toggle('text-indigo-600', !isError);
+  // ink for normal status, error red per the design system
+  els.status.style.color = isError ? '#ee0000' : '#171717';
 }
 function clearStatus() { els.status.classList.add('hidden'); }
 
