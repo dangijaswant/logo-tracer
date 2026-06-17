@@ -1,0 +1,27 @@
+# Rust build artifacts
+target/
+**/target/
+Cargo.lock
+
+# Node
+node_modules/
+**/node_modules/
+
+# Upstream git clones (not part of this repo). The standalone logo-wasm source lives at
+# the top-level logo-wasm/ instead. These are embedded clones with their own .git.
+vtracer/
+visioncortex/
+
+# wasm-pack output under the crate (rebuilt from source).
+# NOTE: web/pkg/ IS committed — it's the prebuilt wasm that Cloudflare Pages serves.
+vtracer/logo-wasm/pkg/
+
+# Test outputs / scratch
+test-output/
+test-assets/
+refrense/*.svg
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

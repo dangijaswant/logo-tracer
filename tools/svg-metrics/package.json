@@ -1,0 +1,13 @@
+{
+  "name": "svg-metrics",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Structural metrics for traced SVGs (logo-tracer project, Phase 4).",
+  "type": "module",
+  "bin": {
+    "svg-metrics": "index.js"
+  },
+  "scripts": {
+    "metrics": "node index.js"
+  }
+}

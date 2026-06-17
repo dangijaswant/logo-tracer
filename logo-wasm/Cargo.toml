@@ -1,0 +1,27 @@
+[package]
+name = "logo-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WebAssembly logo-mode PNG->SVG tracer (browser build of the custom VTracer logo pipeline)."
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# NOTE: this crate intentionally has NO `image` crate dependency. PNG decoding happens in
+# JS (canvas -> ImageData -> raw RGBA), which is passed in. The crate only needs the pure
+# tracing engine (visioncortex) + curve fitting (kurbo), both of which compile to wasm32.
+[dependencies]
+wasm-bindgen = "0.2"
+# Uses the published visioncortex tracing engine so this crate builds standalone.
+# (The development build in vtracer/logo-wasm uses a local path to a visioncortex checkout.)
+visioncortex = "0.8"
+kurbo = "0.11"
+console_error_panic_hook = { version = "0.1", optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+
+[profile.release]
+opt-level = "s"   # optimize for small wasm size
+lto = true

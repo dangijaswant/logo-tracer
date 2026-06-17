@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Logo Tracer — PNG to clean SVG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* checkerboard to reveal transparency in previews */
+    .checker {
+      background-image:
+        linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+    }
+    .drop-active { border-color: #6366f1; background-color: #eef2ff; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8 text-center">
+      <h1 class="text-3xl font-bold tracking-tight text-slate-900">Logo Tracer</h1>
+      <p class="mt-1 text-slate-500">Convert a PNG logo into a clean, editable SVG — entirely in your browser.</p>
+    </header>
+
+    <!-- Upload zone -->
+    <div id="drop" class="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-white p-10 text-center transition hover:border-indigo-400">
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+      <svg class="mx-auto h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+      </svg>
+      <p class="mt-3 font-medium text-slate-700">Drop a PNG here, or click to choose</p>
+      <p class="mt-1 text-sm text-slate-400">Works best on logos and icons with a few flat colors</p>
+    </div>
+
+    <!-- Status -->
+    <p id="status" class="mt-4 hidden text-center text-sm font-medium text-indigo-600"></p>
+
+    <!-- Results -->
+    <section id="results" class="mt-8 hidden">
+      <div class="grid gap-4 md:grid-cols-2">
+        <!-- Original -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Original PNG</h2>
+          <div class="checker flex items-center justify-center rounded-lg p-4">
+            <img id="srcImg" class="max-h-72 w-auto" alt="source" />
+          </div>
+        </div>
+        <!-- Traced -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Traced SVG</h2>
+            <span id="metrics" class="text-xs text-slate-400"></span>
+          </div>
+          <div class="checker flex items-center justify-center rounded-lg p-4">
+            <div id="svgBox" class="flex max-h-72 items-center justify-center [&>svg]:max-h-72 [&>svg]:w-auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Max colors</span>
+            <input id="maxColors" type="range" min="2" max="8" value="4" class="mt-2 w-full accent-indigo-600" />
+            <span class="text-xs text-slate-400"><span id="maxColorsVal">4</span> colors</span>
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Color detail</span>
+            <input id="colorPrecision" type="range" min="2" max="8" value="4" class="mt-2 w-full accent-indigo-600" />
+            <span class="text-xs text-slate-400">precision <span id="colorPrecisionVal">4</span></span>
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Remove speckle</span>
+            <input id="filterSpeckle" type="range" min="0" max="32" value="16" class="mt-2 w-full accent-indigo-600" />
+            <span class="text-xs text-slate-400">&lt; <span id="filterSpeckleVal">16</span>px dropped</span>
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Corner sharpness</span>
+            <input id="cornerThreshold" type="range" min="20" max="90" value="40" class="mt-2 w-full accent-indigo-600" />
+            <span class="text-xs text-slate-400"><span id="cornerThresholdVal">40</span>°</span>
+          </label>
+        </div>
+
+        <div class="mt-5 flex flex-wrap items-center gap-3">
+          <button id="retrace" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700">Re-trace</button>
+          <button id="download" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700">Download SVG</button>
+          <button id="copy" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Copy SVG code</button>
+          <button id="reset" class="ml-auto text-sm text-slate-400 hover:text-slate-600">Start over</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-12 text-center text-xs text-slate-400">
+      Runs fully in your browser via WebAssembly — your image never leaves your device.
+    </footer>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
