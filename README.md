@@ -8,7 +8,7 @@ circular-arc geometry (the "circle technique"), and collapses anti-aliased color
 small dominant palette — producing compact, designer-quality SVGs from raster logos.
 
 ## Live demo
-Deployed on Cloudflare Pages (see the repo's deployments). To run locally:
+**https://logo-tracer.pages.dev** (Cloudflare Pages). To run locally:
 
 ```bash
 cd web
