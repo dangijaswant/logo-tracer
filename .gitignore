@@ -21,6 +21,9 @@ test-output/
 test-assets/
 refrense/*.svg
 
+# Wrangler local cache
+.wrangler/
+
 # OS / editor
 .DS_Store
 Thumbs.db
