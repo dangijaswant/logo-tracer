@@ -18,6 +18,18 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+// Exposed for the test suite (tools/svg-metrics/test/) and for reuse by other tooling.
+export {
+  parseArgs,
+  countElements,
+  uniqueFills,
+  getViewBoxOrSize,
+  tokenizePath,
+  analyzePathData,
+  nearAxis,
+};
 
 function parseArgs(argv) {
   const args = { input: null, out: null, tinyThreshold: 1.5, axisDeg: 4 };
@@ -299,4 +311,8 @@ function main() {
   );
 }
 
-main();
+// CLI entry point: only run when executed directly, so the module can be
+// imported by the test suite (tools/svg-metrics/test/) without side effects.
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) main();
+

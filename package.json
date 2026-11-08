@@ -1,0 +1,13 @@
+{
+  "name": "logo-tracer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "In-browser PNG-to-SVG logo tracer (Rust/WASM) — clean, compact, designer-quality vector logos with no backend.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "cd logo-wasm && cargo test && node --test tools/svg-metrics/test/",
+    "serve": "npx serve web",
+    "deploy": "npx wrangler pages deploy web --project-name logo-tracer"
+  }
+}

@@ -224,3 +224,55 @@ fn should_key_image(img: &ColorImage) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A valid 2x2 RGBA image: one red pixel, three transparent pixels.
+    fn sample_rgba() -> Vec<u8> {
+        let mut px = vec![0u8; 2 * 2 * 4];
+        px[0] = 255;
+        px[1] = 0;
+        px[2] = 0;
+        px[3] = 255;
+        px
+    }
+
+    #[test]
+    fn trace_logo_rejects_mismatched_rgba_length() {
+        // 2x2 needs 16 bytes; pass 8 — must return an empty <svg>, not panic.
+        let svg = trace_logo(&[0u8; 8], 2, 2, LogoOptions::default());
+        assert!(svg.contains("<svg"));
+        assert!(!svg.contains("<path"), "got: {svg}");
+    }
+
+    #[test]
+    fn trace_logo_rejects_zero_dimensions() {
+        let svg = trace_logo(&[], 0, 0, LogoOptions::default());
+        assert!(svg.contains("<svg"));
+        assert!(!svg.contains("<path"));
+    }
+
+    #[test]
+    fn trace_logo_emits_svg_for_valid_input() {
+        let svg = trace_logo(&sample_rgba(), 2, 2, LogoOptions::default());
+        assert!(svg.contains("viewBox=\"0 0 2 2\""));
+    }
+
+    #[test]
+    fn should_key_image_flags_mostly_transparent_images() {
+        // 10x10 image, 30 fully-transparent pixels on row 0 => exceeds threshold
+        let mut px = vec![255u8; 10 * 10 * 4]; // opaque white
+        for i in 0..30 {
+            px[i * 4 + 3] = 0; // set alpha=0 on the first 30 pixels
+        }
+        let img = ColorImage {
+            pixels: px,
+            width: 10,
+            height: 10,
+        };
+        // threshold = width*2*0.2 = 4, and row 0 alone has 30 transparent -> keys
+        assert!(should_key_image(&img));
+    }
+}

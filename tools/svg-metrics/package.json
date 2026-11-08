@@ -8,6 +8,7 @@
     "svg-metrics": "index.js"
   },
   "scripts": {
-    "metrics": "node index.js"
+    "metrics": "node index.js",
+    "test": "node --test test/"
   }
 }
