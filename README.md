@@ -56,4 +56,4 @@ npx wrangler pages deploy web --project-name logo-tracer
 ```
 
 ## License
-Built on visioncortex/VTracer (MIT/Apache-2.0). Tracing pipeline and web app © the author.
+MIT — see [LICENSE](LICENSE). Built on visioncortex/VTracer (MIT/Apache-2.0).
